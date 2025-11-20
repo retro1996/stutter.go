@@ -2,7 +2,8 @@
 #define CJIEBA_JIEBA_H
 
 #include <stdlib.h>
-#include "util.h"
+#include <util.h>
+#include <trim.h>
 
 typedef void* Jieba;
 
@@ -23,9 +24,9 @@ Jieba NewJieba(const char* dict_path,
       const char* stop_words_path);
 void FreeJieba(Jieba);
 
-char** Cut(Jieba handle, const char* sentence, int is_hmm_used);
-char** CutAll(Jieba handle, const char* sentence);
-char** CutForSearch(Jieba handle, const char* sentence, int is_hmm_used);
+Word* Cut(Jieba handle, const char* sentence, int is_hmm_used);
+Word* CutAll(Jieba handle, const char* sentence); // 此次修改点
+Word* CutForSearch(Jieba handle, const char* sentence, int is_hmm_used);
 char** Tag(Jieba handle, const char* sentence);
 void AddWord(Jieba handle, const char* word);
 void AddWordEx(Jieba handle, const char* word, int freq, const char* tag);
