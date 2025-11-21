@@ -1,9 +1,6 @@
 package gojieba
 
 import (
-	"os"
-	"strconv"
-	"strings"
 	"testing"
 )
 
@@ -29,23 +26,4 @@ func BenchmarkGoJieba(b *testing.B) {
 			_ = x.CutAll(benchStr)
 		}
 	})
-}
-
-// getRSS 读取 Linux/Unix 系统下的 RSS 内存占用 (单位: MB)
-func getRSS() float64 {
-	// 读取 /proc/self/statm 获取内存信息
-	// 第二列是 RSS (以页为单位)
-	data, err := os.ReadFile("/proc/self/statm")
-	if err != nil {
-		return 0
-	}
-	fields := strings.Fields(string(data))
-	if len(fields) < 2 {
-		return 0
-	}
-	rssPages, _ := strconv.ParseUint(fields[1], 10, 64)
-	pageSize := int64(os.Getpagesize())
-
-	// 转换为 MB
-	return float64(rssPages*uint64(pageSize)) / (1024 * 1024)
 }

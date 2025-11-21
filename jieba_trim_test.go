@@ -1,9 +1,11 @@
 package gojieba
 
 import (
+	"os"
 	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -221,4 +223,21 @@ func TestRSSRecovery(t *testing.T) {
 	if afterFreeRSS-afterTrimRSS < 1.0 {
 		t.Log("⚠️ Note: Glibc might have already released memory automatically, or fragmentation wasn't severe enough.")
 	}
+}
+
+// getRSS 读取RSS 内存占用
+func getRSS() float64 {
+	data, err := os.ReadFile("/proc/self/statm")
+	if err != nil {
+		return 0
+	}
+	fields := strings.Fields(string(data))
+	if len(fields) < 2 {
+		return 0
+	}
+	rssPages, _ := strconv.ParseUint(fields[1], 10, 64)
+	pageSize := int64(os.Getpagesize())
+
+	// 转换为 MB
+	return float64(rssPages*uint64(pageSize)) / (1024 * 1024)
 }
