@@ -6,6 +6,7 @@ package gojieba
 #include "jieba.h"
 */
 import "C"
+
 import (
 	"fmt"
 	"os"
@@ -226,4 +227,8 @@ func convertCWordToStructs(s string, x *C.Word) []Word {
 		p = (*C.Word)(unsafe.Pointer(uintptr(unsafe.Pointer(p)) + unsafe.Sizeof(*p)))
 	}
 	return res
+}
+
+func Trim() {
+	C.Trim()
 }

@@ -31,38 +31,6 @@ func BenchmarkGoJieba(b *testing.B) {
 	})
 }
 
-func BenchmarkFree(b *testing.B) {
-	rssBefore := getRSS()
-	x := NewJieba()
-	b.Run(
-		"Cut",
-		func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				x.CutAll("我是拖拉机学院手扶拖拉机专业的。不用多久，我就会升职加薪，当上CEO，走上人生巅峰。")
-			}
-		},
-	)
-	x.Free()
-	rssAfter := getRSS()
-	b.Logf("RSS before: %.2f MB, after: %.2f MB\n", rssBefore, rssAfter)
-}
-
-func BenchmarkFreeWithTrim(b *testing.B) {
-	rssBefore := getRSS()
-	x := NewJieba()
-	b.Run(
-		"Cut",
-		func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				x.CutAll("我是拖拉机学院手扶拖拉机专业的。不用多久，我就会升职加薪，当上CEO，走上人生巅峰。")
-			}
-		},
-	)
-	x.FreeWithTrim()
-	rssAfter := getRSS()
-	b.Logf("RSS before: %.2f MB, after: %.2f MB\n", rssBefore, rssAfter)
-}
-
 // getRSS 读取 Linux/Unix 系统下的 RSS 内存占用 (单位: MB)
 func getRSS() float64 {
 	// 读取 /proc/self/statm 获取内存信息
