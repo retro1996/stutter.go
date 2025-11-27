@@ -3,6 +3,8 @@ extern "C" {
 }
 
 #include "cppjieba/Jieba.hpp"
+#include <vector>
+#include <cstring>
 
 static char** ConvertWords(const std::vector<std::string>& words) {
   char ** res = (char**)malloc(sizeof(char*) * (words.size() + 1));
@@ -48,24 +50,24 @@ void FreeJieba(Jieba x) {
   delete (cppjieba::Jieba*)x;
 }
 
-char** Cut(Jieba x, const char* sentence, int is_hmm_used) {
-  std::vector<std::string> words;
+Word* Cut(Jieba x, const char* sentence, int is_hmm_used) {
+  std::vector<cppjieba::Word> words;
   ((cppjieba::Jieba*)x)->Cut(sentence, words, is_hmm_used);
-  char** res = ConvertWords(words);
+  Word* res = ConvertWords(words);
   return res;
 }
 
-char** CutAll(Jieba x, const char* sentence) {
-  std::vector<std::string> words;
+Word* CutAll(Jieba x, const char* sentence) {
+  std::vector<cppjieba::Word> words;
   ((cppjieba::Jieba*)x)->CutAll(sentence, words);
-  char** res = ConvertWords(words);
+  Word* res = ConvertWords(words);
   return res;
 }
 
-char** CutForSearch(Jieba x, const char* sentence, int is_hmm_used) {
-  std::vector<std::string> words;
+Word* CutForSearch(Jieba x, const char* sentence, int is_hmm_used) {
+  std::vector<cppjieba::Word> words;
   ((cppjieba::Jieba*)x)->CutForSearch(sentence, words, is_hmm_used);
-  char** res = ConvertWords(words);
+  Word* res = ConvertWords(words);
   return res;
 }
 

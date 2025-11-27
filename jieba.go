@@ -6,6 +6,7 @@ package gojieba
 #include "jieba.h"
 */
 import "C"
+
 import (
 	"fmt"
 	"os"
@@ -69,6 +70,17 @@ func (x *Jieba) Free() {
 	}
 }
 
+func (x *Jieba) FreeWithTrim() {
+	x.Free()
+	C.Trim()
+}
+
+func (x *Jieba) WithTrim() *Jieba {
+	runtime.SetFinalizer(x, nil)
+	runtime.SetFinalizer(x, (*Jieba).FreeWithTrim)
+	return x
+}
+
 func (x *Jieba) Cut(s string, hmm bool) []string {
 	c_int_hmm := 0
 	if hmm {
@@ -76,18 +88,18 @@ func (x *Jieba) Cut(s string, hmm bool) []string {
 	}
 	cstr := C.CString(s)
 	defer C.free(unsafe.Pointer(cstr))
-	var words **C.char = C.Cut(x.jieba, cstr, C.int(c_int_hmm))
-	defer C.FreeWords(words)
-	res := cstrings(words)
+	var words *C.Word = C.Cut(x.jieba, cstr, C.int(c_int_hmm))
+	defer C.free(unsafe.Pointer(words)) // can directly use free now...
+	res := convertCWordToSlice(s, words)
 	return res
 }
 
 func (x *Jieba) CutAll(s string) []string {
 	cstr := C.CString(s)
 	defer C.free(unsafe.Pointer(cstr))
-	var words **C.char = C.CutAll(x.jieba, cstr)
-	defer C.FreeWords(words)
-	res := cstrings(words)
+	var words *C.Word = C.CutAll(x.jieba, cstr)
+	defer C.free(unsafe.Pointer(words))
+	res := convertCWordToSlice(s, words)
 	return res
 }
 
@@ -98,9 +110,9 @@ func (x *Jieba) CutForSearch(s string, hmm bool) []string {
 	}
 	cstr := C.CString(s)
 	defer C.free(unsafe.Pointer(cstr))
-	var words **C.char = C.CutForSearch(x.jieba, cstr, C.int(c_int_hmm))
-	defer C.FreeWords(words)
-	res := cstrings(words)
+	var words *C.Word = C.CutForSearch(x.jieba, cstr, C.int(c_int_hmm))
+	defer C.free(unsafe.Pointer(words))
+	res := convertCWordToSlice(s, words)
 	return res
 }
 
@@ -142,7 +154,7 @@ func (x *Jieba) Tokenize(s string, mode TokenizeMode, hmm bool) []Word {
 	defer C.free(unsafe.Pointer(cstr))
 	var words *C.Word = C.Tokenize(x.jieba, cstr, C.TokenizeMode(mode), C.int(c_int_hmm))
 	defer C.free(unsafe.Pointer(words))
-	return convertWords(s, words)
+	return convertCWordToStructs(s, words)
 }
 
 type WordWeight struct {
@@ -163,8 +175,7 @@ func (x *Jieba) ExtractWithWeight(s string, topk int) []WordWeight {
 	cstr := C.CString(s)
 	defer C.free(unsafe.Pointer(cstr))
 	words := C.ExtractWithWeight(x.jieba, cstr, C.int(topk))
-	p := unsafe.Pointer(words)
-	res := cwordweights((*C.struct_CWordWeight)(p))
+	res := cwordweights(words)
 	defer C.FreeWordWeights(words)
 	return res
 }
@@ -181,4 +192,43 @@ func cwordweights(x *C.struct_CWordWeight) []WordWeight {
 		x = (*C.struct_CWordWeight)(unsafe.Pointer(uintptr(unsafe.Pointer(x)) + eltSize))
 	}
 	return s
+}
+
+// convertCWordToSlice convert *C.Word to []string (zero-copy)
+func convertCWordToSlice(s string, x *C.Word) []string {
+	var res []string
+	p := x
+	// 假设 C++ 返回以 {0,0} 结尾的哨兵
+	for p != nil && p.len != 0 {
+		start := int(p.offset)
+		end := start + int(p.len)
+		if start <= end && end <= len(s) {
+			res = append(res, s[start:end])
+		}
+		p = (*C.Word)(unsafe.Pointer(uintptr(unsafe.Pointer(p)) + unsafe.Sizeof(*p)))
+	}
+	return res
+}
+
+// convertCWordToStructs convert *C.Word to []Word (Go Struct)
+func convertCWordToStructs(s string, x *C.Word) []Word {
+	var res []Word
+	p := x
+	for p != nil && p.len != 0 {
+		start := int(p.offset)
+		end := start + int(p.len)
+		if start <= end && end <= len(s) {
+			res = append(res, Word{
+				Str:   s[start:end],
+				Start: start,
+				End:   end,
+			})
+		}
+		p = (*C.Word)(unsafe.Pointer(uintptr(unsafe.Pointer(p)) + unsafe.Sizeof(*p)))
+	}
+	return res
+}
+
+func Trim() {
+	C.Trim()
 }
